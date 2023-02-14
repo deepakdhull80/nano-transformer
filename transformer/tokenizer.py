@@ -89,6 +89,8 @@ class WordTokenizer(Tokenizer):
         self.tokens = set()
         self.SOT = "<SOT>"
         self.EOT = "<EOT>"
+        self.MASK_TOKEN = "<MASK>"
+        self.SPC_TOKENS = [self.SOT, self.EOT, self.MASK_TOKEN]
 
     @staticmethod
     def tokenize(sentence: str) -> List:
@@ -108,8 +110,8 @@ class WordTokenizer(Tokenizer):
         
         self.tokens = list(self.tokens)
         print(f"The number of tokens are {len(self.tokens)}")
-        self.tokens.insert(0,self.SOT)
-        self.tokens.insert(0,self.EOT)
+        for t in self.SPC_TOKENS:
+            self.tokens.insert(0,t)
 
         self.k2w = {
             i+1:w for i, w in enumerate(self.tokens)

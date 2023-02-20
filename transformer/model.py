@@ -2,21 +2,44 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .layers import SelfAttention
+from .layers import MultiHeadAttention
 
-class Block(nn.Module):
-    def __init__(self, max_len:int, emb_dim:int, masked:bool):
+class EncoderBlock(nn.Module):
+    def __init__(self, heads, max_len:int, emb_dim:int):
         super().__init__()
         self.max_len = max_len
         self.emb_dim = emb_dim
-        self.masked = masked
-        self.attn = SelfAttention(max_len, emb_dim)
-    
+        self.heads = heads
+        self.attn = MultiHeadAttention(heads, emb_dim)
+        self.norm = torch.nn.LayerNorm(emb_dim)
+        self.linear = nn.Linear(emb_dim, emb_dim)
+        
     def forward(self,x:torch.Tensor):
-        x = self.attn(x)
+        x = self.norm(x + self.attn(x, x, x))    
+        x = self.norm(x + self.linear(x))
         return x
 
-class TextModel(nn.Module):
+class DecoderBlock(nn.Module):
+    def __init__(self, heads, max_len:int, emb_dim:int) -> None:
+        super().__init__()
+        self.max_len = max_len
+        self.emb_dim = emb_dim
+        self.heads = heads
+        self.mask = True
+        self.masked_attn = MultiHeadAttention(heads, emb_dim,True)
+        self.attn = MultiHeadAttention(heads, emb_dim)
+        self.norm = torch.nn.LayerNorm(emb_dim)
+        self.linear = nn.Linear(emb_dim, emb_dim)
+    
+    def forward(self, encoder, x):
+        x = self.norm(x + self.masked_attn(x, x, x))
+        
+        x = self.norm(x + self.attn(x, encoder, encoder))
+        x = self.norm(x + self.linear(x))
+        return x
+
+
+class NanoTransformer(nn.Module):
     def __init__(self, token_size, max_len, emb_dim, n_block):
         super().__init__()
         self.token_size = token_size

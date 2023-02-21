@@ -13,7 +13,7 @@ class MaskedTextDataset(Dataset):
 
 	def __getitem__(self, indx):
 		tokens = torch.tensor(self.text_data[indx], dtype=torch.long)
-		masked_idx = torch.randint(0,self.tokenizer.max_length,(int(self.tokenizer.max_length*self.mask_fraction),))
+		masked_idx = torch.randint(1,self.tokenizer.max_length,(int(self.tokenizer.max_length*self.mask_fraction),))
 		masked_token = torch.clone(tokens)
 		masked_token[masked_idx] = self.tokenizer.w2k[self.tokenizer.MASK_TOKEN]
 		return masked_token, tokens

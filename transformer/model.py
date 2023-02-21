@@ -15,7 +15,7 @@ class EncoderBlock(nn.Module):
         self.linear = nn.Linear(emb_dim, emb_dim)
         
     def forward(self,x:torch.Tensor):
-        x = self.norm(x + self.attn(x, x, x))    
+        x = self.norm(x + self.attn(x, x, x))
         x = self.norm(x + self.linear(x))
         return x
 
@@ -26,7 +26,7 @@ class DecoderBlock(nn.Module):
         self.emb_dim = emb_dim
         self.heads = heads
         self.mask = True
-        self.masked_attn = MultiHeadAttention(heads, emb_dim,True)
+        self.masked_attn = MultiHeadAttention(heads, emb_dim, True)
         self.attn = MultiHeadAttention(heads, emb_dim)
         self.norm = torch.nn.LayerNorm(emb_dim)
         self.linear = nn.Linear(emb_dim, emb_dim)
@@ -63,6 +63,7 @@ class NanoTransformer(nn.Module):
         return logits
 
     def forward(self,x,y=None):
+        _x = x.clone()
         try:
             x = self.embedding(x) + self.positional(x)
         except Exception as e:
@@ -73,7 +74,8 @@ class NanoTransformer(nn.Module):
         x = self.final_mlp(x)
         loss = None
         if y is not None:
-            c = y != self.tokenizer.w2k[self.tokenizer.PADD]
+            c = _x != self.tokenizer.w2k[self.tokenizer.PADD]
+            # print(y[c])
             loss = self.loss( x[c], y[c] )
 
         x = torch.argmax(x,dim=-1)

@@ -58,11 +58,12 @@ def run():
 				train_iter.set_description(f"Loss: {loss: .2f},Mean Loss {train_loss/(i+1): .2f}(train)")
 		logger.info(f"TRAIN - Mean Loss {train_loss/(len(train_dl)): .2f}")
 		
-		inference(
-			model,
-			tokenizer,
-			X[:2], Y[:2]
-		)
+		if (epoch+1)%10 == 0:
+			inference(
+				model,
+				tokenizer,
+				X[:2], Y[:2]
+			)
 		
 		val_iter = tqdm(val_dl, total=len(val_dl))
 		model.eval()
@@ -114,7 +115,7 @@ if __name__ == '__main__':
 		max_length=MAX_LEN
 	)
 	df = pd.read_csv(config['data_file_path'])
-	data = df['article'].to_list()[:100]
+	data = df['article'].to_list()[:1000]
 	
 	tokenizer.fit(
 		docs=data

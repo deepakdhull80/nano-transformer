@@ -8,5 +8,6 @@ TRAIN_SPLIT: 0.8
 N_BLOCK: 8
 device: "cuda"
 data_file_path: "data/cnn_dailymail/validation.csv"
+# data_file_path: "data/cnn_dailymail/train.csv"
 transformer_heads: 4
-sentence_mask_fraction: 0.05
+sentence_mask_fraction: 0.2

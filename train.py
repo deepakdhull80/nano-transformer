@@ -12,7 +12,10 @@ from transformer.model import NanoTransformer
 
 indx = len(os.listdir("logs/")) + 1
 log_filename = f"logs/output_{indx}.log"
+chkp_dir = "checkpoints"
+print("logs path->",log_filename)
 os.makedirs(os.path.dirname(log_filename), exist_ok=True)
+os.makedirs(os.path.dirname(f"{chkp_dir}/"), exist_ok=True)
 logging.basicConfig(filename=log_filename,
                     filemode='w',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -21,9 +24,21 @@ logging.basicConfig(filename=log_filename,
 
 logger = logging.getLogger('TORCH_TRAINER')
 
+@torch.no_grad()
+def inference(model,tokenizer:WordTokenizer, x, y=None):
+	_x = tokenizer.decode(x.cpu().numpy())
+	logger.info(f"Query: {_x}")
+	if y!=None:
+		r = tokenizer.decode(y.cpu().numpy())
+		logger.info(f"Actual: {r}")
+	
+	y_h,_ = model(x)
+	r = tokenizer.decode(y_h.cpu().numpy())
+	logger.info(f"result: {r}")
+
 def run():
 	g_val_loss = 10
-	model_chkpt_path = f"checkpoints/cpk_{indx}_{MODEL_NAME}.pth"
+	model_chkpt_path = f"{chkp_dir}/cpk_{indx}_{MODEL_NAME}.pth"
 	for epoch in range(EPOCH):
 		print(f"Starting epoch {epoch}")
 		logger.info(f"EPOCH start: {epoch}")
@@ -42,7 +57,13 @@ def run():
 				train_loss+=loss
 				train_iter.set_description(f"Loss: {loss: .2f},Mean Loss {train_loss/(i+1): .2f}(train)")
 		logger.info(f"TRAIN - Mean Loss {train_loss/(len(train_dl)): .2f}")
-
+		
+		inference(
+			model,
+			tokenizer,
+			X[:2], Y[:2]
+		)
+		
 		val_iter = tqdm(val_dl, total=len(val_dl))
 		model.eval()
 		val_loss = 0
@@ -65,10 +86,12 @@ def run():
 			},model_chkpt_path)
 			print(f"model checkpoint saved -> {model_chkpt_path}")
 			logger.info(f"model checkpoint saved -> {model_chkpt_path}")
-		# with torch.no_grad():
-		# 	mask = [1]
-		# 	mask.extend([0 for _ in range(MAX_LEN-1)])
-		# 	text = model.inference(tokenizer.item[-2:], [mask for _ in range(2)])
+		
+		# inference(
+		# 	model,
+		# 	tokenizer,
+		# 	X[:2], Y[:2]
+		# )
 		
 
 if __name__ == '__main__':
@@ -91,7 +114,7 @@ if __name__ == '__main__':
 		max_length=MAX_LEN
 	)
 	df = pd.read_csv(config['data_file_path'])
-	data = df['article'].to_list()[:1000]
+	data = df['article'].to_list()[:100]
 	
 	tokenizer.fit(
 		docs=data

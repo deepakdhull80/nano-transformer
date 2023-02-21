@@ -104,7 +104,7 @@ class WordTokenizer(Tokenizer):
         return set(filter(self.filter, tokens))
     
     def fit(self, docs: List[str], enable_docs_persist=False):
-        
+        #TODO: need to implemented concurrent.
         print(f"Tokenizing the docs. No of docs {len(docs)}.")
         for sentence in tqdm(docs, total=len(docs)):
             token = self.preprocess(sentence)

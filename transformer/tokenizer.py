@@ -90,7 +90,9 @@ class WordTokenizer(Tokenizer):
         self.SOT = "<SOT>"
         self.EOT = "<EOT>"
         self.MASK_TOKEN = "<MASK>"
-        self.SPC_TOKENS = [self.SOT, self.EOT, self.MASK_TOKEN]
+        self.PADD = "<PAD>"
+        self.SPC_TOKENS = [self.SOT, self.EOT, self.MASK_TOKEN, self.PADD]
+        self.n_tokens = None
 
     @staticmethod
     def tokenize(sentence: str) -> List:
@@ -110,37 +112,35 @@ class WordTokenizer(Tokenizer):
         
         self.tokens = list(self.tokens)
         print(f"The number of tokens are {len(self.tokens)}")
+        
         for t in self.SPC_TOKENS:
             self.tokens.insert(0,t)
 
         self.k2w = {
             i+1:w for i, w in enumerate(self.tokens)
         }
-
         self.w2k = {
             v:k for k,v in self.k2w.items()
         }
+        self.n_tokens = len(self.k2w.keys())
         if enable_docs_persist:
-            self.vec, self.mask = self.encode(docs)
+            self.v = self.encode(docs)
 
 
 
     def encode(self, docs:List[str]) -> Tuple[np.ndarray, np.ndarray]:
         sen_li = []
-        mask_li = []
         for sentence in docs:
             _x = [self.w2k[w] for w in self.preprocess(sentence)]
             _x = _x[:self.max_length]
             sen_len = len(_x)
             if self.max_length > sen_len:
                 padding = self.max_length - sen_len
-                _x = _x + [-1 for _ in range(padding)]
+                _x = _x + [self.w2k[self.PADD] for _ in range(padding)]
             
-            _mask = [1 for _ in range(sen_len)] + [0 for _ in range(self.max_length - sen_len)]
             sen_li.append(_x)
-            mask_li.append(_mask)
         
-        return np.array(sen_li), np.array(mask_li)
+        return np.array(sen_li)
 
     def decode(self, tokens:Union[List[List[int]], np.ndarray]) -> List[str]:
         

@@ -4,3 +4,4 @@ torch
 torchtext
 spacy
 nltk
+PyYAML

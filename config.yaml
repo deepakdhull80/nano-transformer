@@ -1,5 +1,12 @@
-MAX_LEN : 23000
+model_name: "nano-transformer"
+MAX_LEN : 500
 EMBEDDING_SIZE : 128
-BATCH_SIZE : 32
+BATCH_SIZE : 8
 LR : 0.003
 EPOCH : 100
+TRAIN_SPLIT: 0.8
+N_BLOCK: 4
+device: "cuda"
+data_file_path: "data/cnn_dailymail/validation.csv"
+transformer_heads: 4
+sentence_mask_fraction: 0.15

@@ -40,34 +40,57 @@ class DecoderBlock(nn.Module):
 
 
 class NanoTransformer(nn.Module):
-    def __init__(self, token_size, max_len, emb_dim, n_block):
+    def __init__(self, token_size, max_len, heads, emb_dim, n_block, loss_fn = torch.nn.CrossEntropyLoss(),tokenizer=None):
         super().__init__()
+        self.tokenizer = tokenizer
         self.token_size = token_size
         self.max_len = max_len
         self.emb_dim = emb_dim
         self.n_block = n_block
-        self.embedding = nn.Embedding(token_size,emb_dim)
-        self.positional = nn.Embedding(token_size,emb_dim)
-        self.blk = nn.Sequential(*[Block(max_len, emb_dim, masked=True) for _ in range(n_block)])
+        self.embedding = nn.Embedding(token_size, emb_dim)
+        self.positional = nn.Embedding(token_size, emb_dim)
+        self.blk = nn.Sequential(*[EncoderBlock(max_len, heads, emb_dim) for _ in range(n_block)])
         self.final_mlp = nn.Linear(emb_dim, token_size)
-        self._loss = torch.nn.CrossEntropyLoss()
+        self._loss = loss_fn
 
     def loss(self, x, y):
         return self._loss(x, y)
-    
+
+    @torch.no_grad()
     def inference(self, x):
-        pred = None
-        x = x[:,0].view(-1,1)
-        
+        #TODO: need to implement.
         logits,_ = self.forward(x)
-        
+        return logits
 
     def forward(self,x,y=None):
-        x = self.embedding(x) + self.positional(x)
+        try:
+            x = self.embedding(x) + self.positional(x)
+        except Exception as e:
+            print(x.max(), x.min())
+            raise Exception(e)
         for blk in self.blk:
             x = blk(x)
         x = self.final_mlp(x)
         loss = None
         if y is not None:
-            loss = self.loss( x.view(-1,x.shape[-1]), y.view(-1) )
+            c = y != self.tokenizer.w2k[self.tokenizer.PADD]
+            loss = self.loss( x[c], y[c] )
+
+        x = torch.argmax(x,dim=-1)
         return x, loss
+
+
+if __name__ == "__main__":
+
+	token_size = int(1e6)
+	model = NanoTransformer(
+		token_size=token_size,
+		max_len=200,
+		emb_dim=128,
+		n_block=2,
+		heads=4
+	)
+
+	inp = torch.randint(0,token_size, size=(2,200))
+	out = model.inference(inp)
+	print(out)

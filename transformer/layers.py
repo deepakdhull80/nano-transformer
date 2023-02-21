@@ -53,9 +53,10 @@ class MultiHeadAttention(nn.Module):
         q = q.view(B, -1, self.heads, D).permute(0,2,1,3)
         k = k.view(B, -1, self.heads, D).permute(0,2,1,3)
         v = v.view(B, -1, self.heads, D).permute(0,2,1,3)
+        mask=None
         if self.masked:
             mask = torch.triu(torch.ones(q.shape[-1],k.shape[-1]),1)
-        att = self.attention(q,k,v, mask)
+        att = self.attention(q,k,v, mask=mask)
         att = att.permute(0,2,1,3).reshape(B, T, D)
         return self.linear(att)
 
